@@ -1,4 +1,5 @@
 // src/services/duffel.ts
+import { Duffel } from '@duffel/api';
 import { z } from 'zod';
 
 /** Coincidencia de aeropuerto resuelta a IATA. */
@@ -82,3 +83,34 @@ export const offerRequestResponseSchema = z.object({
     offers: z.array(offerSchema),
   }),
 });
+
+/**
+ * Crea un cliente normalizado del dominio sobre @duffel/api.
+ * @param token Token Duffel test mode (validado upstream en config/env.ts).
+ */
+export function createDuffelClient(token: string): DuffelClient {
+  const duffel = new Duffel({ token });
+
+  async function searchAirports(query: string): Promise<AirportMatch[]> {
+    // En @duffel/api 4.x el parámetro `query` está deprecado en favor de `name`.
+    const raw = await duffel.suggestions.list({ name: query });
+    const parsed = placesResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new Error(`Duffel response /places: ${parsed.error.message}`);
+    }
+    return parsed.data.data
+      .filter((p): p is typeof p & { iata_code: string } => typeof p.iata_code === 'string')
+      .map((p) => ({
+        iataCode: p.iata_code,
+        name: p.name,
+        cityName: p.city_name ?? '',
+        countryName: p.country_name ?? '',
+      }));
+  }
+
+  async function searchOffers(): Promise<FlightOffer[]> {
+    throw new Error('Not implemented yet');
+  }
+
+  return { searchAirports, searchOffers };
+}
