@@ -30,4 +30,10 @@ describe("getEnv", () => {
     process.env.DUFFEL_API_TOKEN = "duffel_test_abc123";
     expect(() => getEnv()).toThrowError(/OPENROUTER_API_KEY/);
   });
+
+  it("rechaza falta de DUFFEL_API_TOKEN", () => {
+    process.env.OPENROUTER_API_KEY = "sk-or-v1-xxx";
+    delete process.env.DUFFEL_API_TOKEN;
+    expect(() => getEnv()).toThrowError(/DUFFEL_API_TOKEN/);
+  });
 });

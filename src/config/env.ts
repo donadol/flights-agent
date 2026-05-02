@@ -1,8 +1,6 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-dotenv.config({ path: 'env.local' });
-
 const envSchema = z.object({
   OPENROUTER_API_KEY: z.string().min(1, 'OPENROUTER_API_KEY is required'),
   OPENROUTER_MODEL: z.string().default('openai/gpt-4o-mini'),
@@ -17,6 +15,12 @@ const envSchema = z.object({
 
 export type AppEnv = z.infer<typeof envSchema>;
 
+let envFileLoaded = false;
+
 export function getEnv(): AppEnv {
+  if (!envFileLoaded) {
+    dotenv.config({ path: 'env.local' });
+    envFileLoaded = true;
+  }
   return envSchema.parse(process.env);
 }
