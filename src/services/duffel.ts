@@ -99,7 +99,7 @@ export function createDuffelClient(token: string): DuffelClient {
       throw new Error(`Duffel response /places: ${parsed.error.message}`);
     }
     return parsed.data.data
-      .filter((p): p is typeof p & { iata_code: string } => typeof p.iata_code === 'string')
+      .filter((p): p is typeof p & { iata_code: string } => typeof p.iata_code === 'string' && p.iata_code.length === 3)
       .map((p) => ({
         iataCode: p.iata_code,
         name: p.name,

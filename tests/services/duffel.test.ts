@@ -66,4 +66,19 @@ describe("createDuffelClient.searchAirports", () => {
     const client = createDuffelClient("duffel_test_xyz");
     await expect(client.searchAirports("X")).rejects.toThrow(/Duffel response/);
   });
+
+  it("descarta entradas con iata_code vacío o de longitud distinta de 3", async () => {
+    listMock.mockResolvedValue({
+      data: [
+        { iata_code: "", name: "Empty", city_name: "X", country_name: "Y" },
+        { iata_code: "AB", name: "TooShort", city_name: "X", country_name: "Y" },
+        { iata_code: "ABCD", name: "TooLong", city_name: "X", country_name: "Y" },
+        { iata_code: "MAD", name: "Madrid Barajas", city_name: "Madrid", country_name: "España" },
+      ],
+    });
+    const client = createDuffelClient("duffel_test_xyz");
+    const result = await client.searchAirports("Madrid");
+    expect(result).toHaveLength(1);
+    expect(result[0]?.iataCode).toBe("MAD");
+  });
 });
