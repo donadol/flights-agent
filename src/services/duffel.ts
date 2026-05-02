@@ -84,6 +84,17 @@ export const offerRequestResponseSchema = z.object({
   }),
 });
 
+/** Convierte ISO 8601 duration (e.g. "PT4H30M") a minutos. Retorna 0 si no parsea. */
+export function parseIso8601DurationToMinutes(iso: string | undefined): number {
+  if (!iso) return 0;
+  const match = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/.exec(iso);
+  if (!match) return 0;
+  const days = Number(match[1] ?? 0);
+  const hours = Number(match[2] ?? 0);
+  const minutes = Number(match[3] ?? 0);
+  return days * 24 * 60 + hours * 60 + minutes;
+}
+
 /**
  * Crea un cliente normalizado del dominio sobre @duffel/api.
  * @param token Token Duffel test mode (validado upstream en config/env.ts).
@@ -108,8 +119,52 @@ export function createDuffelClient(token: string): DuffelClient {
       }));
   }
 
-  async function searchOffers(): Promise<FlightOffer[]> {
-    throw new Error('Not implemented yet');
+  async function searchOffers(input: SearchOffersInput): Promise<FlightOffer[]> {
+    const passengers = Array.from({ length: input.passengers ?? 1 }, () => ({ type: 'adult' as const }));
+
+    const raw = await duffel.offerRequests.create({
+      slices: [
+        {
+          origin: input.origin,
+          destination: input.destination,
+          departure_date: input.departureDate,
+          // @duffel/api 4.x exige estos campos en CreateOfferRequestSlice; null = sin filtro.
+          arrival_time: null,
+          departure_time: null,
+        },
+      ],
+      passengers,
+      cabin_class: input.cabinClass ?? 'economy',
+      return_offers: true,
+    });
+
+    const parsed = offerRequestResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new Error(`Duffel response /offer_requests: ${parsed.error.message}`);
+    }
+
+    return parsed.data.data.offers.map((offer) => {
+      const segments: Segment[] = offer.slices.flatMap((slice) =>
+        slice.segments.map((s) => ({
+          origin: s.origin.iata_code,
+          destination: s.destination.iata_code,
+          departureAt: s.departing_at,
+          arrivalAt: s.arriving_at,
+        })),
+      );
+      const durationMinutes = offer.slices
+        .flatMap((slice) => slice.segments)
+        .reduce((sum, s) => sum + parseIso8601DurationToMinutes(s.duration), 0);
+      return {
+        id: offer.id,
+        totalAmount: offer.total_amount,
+        currency: offer.total_currency,
+        airline: offer.owner.name,
+        segments,
+        stops: Math.max(segments.length - 1, 0),
+        durationMinutes,
+      };
+    });
   }
 
   return { searchAirports, searchOffers };

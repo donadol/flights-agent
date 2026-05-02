@@ -12,7 +12,7 @@ vi.mock("@duffel/api", () => ({
   })),
 }));
 
-import { createDuffelClient } from "../../src/services/duffel.js";
+import { createDuffelClient, parseIso8601DurationToMinutes } from "../../src/services/duffel.js";
 
 beforeEach(() => {
   listMock.mockReset();
@@ -67,6 +67,17 @@ describe("createDuffelClient.searchAirports", () => {
     await expect(client.searchAirports("X")).rejects.toThrow(/Duffel response/);
   });
 
+  it("usa string vacío cuando city_name o country_name vienen ausentes", async () => {
+    listMock.mockResolvedValue({
+      data: [{ iata_code: "JFK", name: "JFK Intl" }],
+    });
+    const client = createDuffelClient("duffel_test_xyz");
+    const result = await client.searchAirports("New York");
+    expect(result).toEqual([
+      { iataCode: "JFK", name: "JFK Intl", cityName: "", countryName: "" },
+    ]);
+  });
+
   it("descarta entradas con iata_code vacío o de longitud distinta de 3", async () => {
     listMock.mockResolvedValue({
       data: [
@@ -80,5 +91,126 @@ describe("createDuffelClient.searchAirports", () => {
     const result = await client.searchAirports("Madrid");
     expect(result).toHaveLength(1);
     expect(result[0]?.iataCode).toBe("MAD");
+  });
+});
+
+describe("createDuffelClient.searchOffers", () => {
+  it("normaliza la respuesta del SDK a FlightOffer[]", async () => {
+    createMock.mockResolvedValue({
+      data: {
+        offers: [
+          {
+            id: "off_123",
+            total_amount: "542.30",
+            total_currency: "USD",
+            owner: { name: "Duffel Airways" },
+            slices: [
+              {
+                segments: [
+                  {
+                    origin: { iata_code: "BOG" },
+                    destination: { iata_code: "MIA" },
+                    departing_at: "2026-07-15T10:00:00",
+                    arriving_at: "2026-07-15T14:30:00",
+                    duration: "PT4H30M",
+                  },
+                  {
+                    origin: { iata_code: "MIA" },
+                    destination: { iata_code: "MAD" },
+                    departing_at: "2026-07-15T18:00:00",
+                    arriving_at: "2026-07-16T08:00:00",
+                    duration: "PT8H",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const client = createDuffelClient("duffel_test_xyz");
+    const result = await client.searchOffers({
+      origin: "BOG",
+      destination: "MAD",
+      departureDate: "2026-07-15",
+    });
+
+    expect(createMock).toHaveBeenCalledWith({
+      slices: [
+        {
+          origin: "BOG",
+          destination: "MAD",
+          departure_date: "2026-07-15",
+          arrival_time: null,
+          departure_time: null,
+        },
+      ],
+      passengers: [{ type: "adult" }],
+      cabin_class: "economy",
+      return_offers: true,
+    });
+    expect(result).toEqual([
+      {
+        id: "off_123",
+        totalAmount: "542.30",
+        currency: "USD",
+        airline: "Duffel Airways",
+        segments: [
+          { origin: "BOG", destination: "MIA", departureAt: "2026-07-15T10:00:00", arrivalAt: "2026-07-15T14:30:00" },
+          { origin: "MIA", destination: "MAD", departureAt: "2026-07-15T18:00:00", arrivalAt: "2026-07-16T08:00:00" },
+        ],
+        stops: 1,
+        durationMinutes: 750, // 4h30 + 8h
+      },
+    ]);
+  });
+
+  it("respeta passengers y cabinClass", async () => {
+    createMock.mockResolvedValue({ data: { offers: [] } });
+    const client = createDuffelClient("duffel_test_xyz");
+    await client.searchOffers({
+      origin: "BOG",
+      destination: "MAD",
+      departureDate: "2026-07-15",
+      passengers: 2,
+      cabinClass: "business",
+    });
+    expect(createMock).toHaveBeenCalledWith({
+      slices: [
+        {
+          origin: "BOG",
+          destination: "MAD",
+          departure_date: "2026-07-15",
+          arrival_time: null,
+          departure_time: null,
+        },
+      ],
+      passengers: [{ type: "adult" }, { type: "adult" }],
+      cabin_class: "business",
+      return_offers: true,
+    });
+  });
+
+  it("lanza error legible si la respuesta no cumple el schema", async () => {
+    createMock.mockResolvedValue({ data: { offers: [{ id: 1 }] } });
+    const client = createDuffelClient("duffel_test_xyz");
+    await expect(
+      client.searchOffers({ origin: "BOG", destination: "MAD", departureDate: "2026-07-15" }),
+    ).rejects.toThrow(/Duffel response/);
+  });
+});
+
+describe("parseIso8601DurationToMinutes", () => {
+  it.each([
+    ["PT4H30M", 270],
+    ["PT8H", 480],
+    ["PT45M", 45],
+    ["P1DT2H", 26 * 60],
+    ["", 0],
+    [undefined, 0],
+    ["invalid", 0],
+  ])("parsea %s → %i", (input, expected) => {
+    expect(parseIso8601DurationToMinutes(input)).toBe(expected);
   });
 });
