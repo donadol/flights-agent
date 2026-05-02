@@ -186,10 +186,12 @@ DUFFEL_API_TOKEN=duffel_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Run: `npm install`
 Expected: instala sin errores. Genera `node_modules/` y `package-lock.json`.
 
-- [ ] **Step 1.7: Verificar que typecheck y lint corren**
+- [ ] **Step 1.7: Verificar que lint corre limpio**
 
-Run: `npm run typecheck && npm run lint`
-Expected: ambos PASS (no hay archivos fuente todavía, ESLint solo valida configuración).
+Run: `npm run lint`
+Expected: PASS. ESLint solo valida los archivos de configuración (no hay `.ts` aún).
+
+> **Nota:** `npm run typecheck` se omite aquí porque `tsc --noEmit` con `include: ["src/**/*.ts","tests/**/*.ts"]` y cero matches lanza `TS18003`. El primer `.ts` aparece en Task 2; desde ese punto en adelante typecheck queda activo y el gate final (Task 18.3) lo verifica.
 
 - [ ] **Step 1.8: Commit**
 
