@@ -76,7 +76,7 @@ Archivos nuevos (todos a crear, el repo está vacío de código):
   },
   "engines": { "node": ">=20" },
   "dependencies": {
-    "@duffel/api": "^3.7.0",
+    "@duffel/api": "^4.25.0",
     "@langchain/core": "^0.3.48",
     "@langchain/openai": "^0.5.18",
     "dotenv": "^16.4.5",
@@ -446,7 +446,7 @@ describe("createDuffelClient.searchAirports", () => {
     const client = createDuffelClient("duffel_test_xyz");
     const result = await client.searchAirports("Bogotá");
 
-    expect(listMock).toHaveBeenCalledWith({ query: "Bogotá" });
+    expect(listMock).toHaveBeenCalledWith({ name: "Bogotá" });
     expect(result).toEqual([
       {
         iataCode: "BOG",
@@ -499,7 +499,8 @@ export function createDuffelClient(token: string): DuffelClient {
   const duffel = new Duffel({ token });
 
   async function searchAirports(query: string): Promise<AirportMatch[]> {
-    const raw = await duffel.suggestions.list({ query });
+    // En @duffel/api 4.x el parámetro `query` está deprecado en favor de `name`.
+    const raw = await duffel.suggestions.list({ name: query });
     const parsed = placesResponseSchema.safeParse(raw);
     if (!parsed.success) {
       throw new Error(`Duffel response /places: ${parsed.error.message}`);
@@ -590,7 +591,15 @@ describe("createDuffelClient.searchOffers", () => {
     });
 
     expect(createMock).toHaveBeenCalledWith({
-      slices: [{ origin: "BOG", destination: "MAD", departure_date: "2026-07-15" }],
+      slices: [
+        {
+          origin: "BOG",
+          destination: "MAD",
+          departure_date: "2026-07-15",
+          arrival_time: null,
+          departure_time: null,
+        },
+      ],
       passengers: [{ type: "adult" }],
       cabin_class: "economy",
       return_offers: true,
@@ -622,7 +631,15 @@ describe("createDuffelClient.searchOffers", () => {
       cabinClass: "business",
     });
     expect(createMock).toHaveBeenCalledWith({
-      slices: [{ origin: "BOG", destination: "MAD", departure_date: "2026-07-15" }],
+      slices: [
+        {
+          origin: "BOG",
+          destination: "MAD",
+          departure_date: "2026-07-15",
+          arrival_time: null,
+          departure_time: null,
+        },
+      ],
       passengers: [{ type: "adult" }, { type: "adult" }],
       cabin_class: "business",
       return_offers: true,
@@ -673,6 +690,9 @@ Reemplazar `searchOffers` dentro de `createDuffelClient`:
           origin: input.origin,
           destination: input.destination,
           departure_date: input.departureDate,
+          // @duffel/api 4.x exige estos campos en CreateOfferRequestSlice; null = sin filtro.
+          arrival_time: null,
+          departure_time: null,
         },
       ],
       passengers,
