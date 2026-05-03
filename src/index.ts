@@ -30,32 +30,27 @@ async function repl(): Promise<void> {
   console.log('Flight Agent — REPL multi-turno. Salir: Ctrl+D o "salir".\n');
 
   let history: BaseMessage[] = [];
-
-  const ask = (): void => {
-    rl.question('> ', async (line) => {
-      const input = line.trim();
-      if (!input) return ask();
-      if (input.toLowerCase() === 'salir') {
-        rl.close();
-        return;
-      }
-      try {
-        const result = await runAgent(input, history, { verbose: false });
-        history = result.history;
-        console.log(`\n${result.output}\n`);
-      } catch (err) {
-        console.error(`\n[error] ${formatError(err)}\n`);
-      }
-      ask();
-    });
-  };
-
-  rl.on('close', () => {
-    console.log('\nHasta luego.');
-    process.exit(0);
-  });
-
-  ask();
+  process.stdout.write('> ');
+  // Async iterator drains lines (interactive or piped) one at a time and
+  // awaits each turn before reading the next; EOF / "salir" ends the loop.
+  for await (const rawLine of rl) {
+    const input = rawLine.trim();
+    if (!input) {
+      process.stdout.write('> ');
+      continue;
+    }
+    if (input.toLowerCase() === 'salir') break;
+    try {
+      const result = await runAgent(input, history, { verbose: false });
+      history = result.history;
+      console.log(`\n${result.output}\n`);
+    } catch (err) {
+      console.error(`\n[error] ${formatError(err)}\n`);
+    }
+    process.stdout.write('> ');
+  }
+  rl.close();
+  console.log('\nHasta luego.');
 }
 
 async function main(): Promise<void> {
