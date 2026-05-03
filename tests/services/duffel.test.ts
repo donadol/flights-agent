@@ -36,7 +36,7 @@ describe("createDuffelClient.searchAirports", () => {
     const client = createDuffelClient("duffel_test_xyz");
     const result = await client.searchAirports("Bogotá");
 
-    expect(listMock).toHaveBeenCalledWith({ name: "Bogotá" });
+    expect(listMock).toHaveBeenCalledWith({ query: "Bogotá" });
     expect(result).toEqual([
       {
         iataCode: "BOG",

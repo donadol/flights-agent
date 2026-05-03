@@ -112,8 +112,10 @@ export function createDuffelClient(token: string): DuffelClient {
   const duffel = new Duffel({ token });
 
   async function searchAirports(query: string): Promise<AirportMatch[]> {
-    // En @duffel/api 4.x el parámetro `query` está deprecado en favor de `name`.
-    const raw = await duffel.suggestions.list({ name: query });
+    // El SDK 4.x marca `query` como deprecado en favor de `name` en sus types,
+    // pero el endpoint real /places/suggestions sigue exigiendo `query`
+    // (responde 422 invalid_fields_sets si solo se manda `name`).
+    const raw = await duffel.suggestions.list({ query });
     const parsed = placesResponseSchema.safeParse(raw);
     if (!parsed.success) {
       throw new Error(`Duffel response /places: ${parsed.error.message}`);
