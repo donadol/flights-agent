@@ -25,7 +25,9 @@ export interface FlightOffer {
   currency: string;
   airline: string;
   segments: Segment[];
+  /** Total de paradas en el itinerario (segments.length - 1, MVP one-way). */
   stops: number;
+  /** Suma de tiempos de vuelo de los segmentos (NO incluye layovers). */
   durationMinutes: number;
 }
 
@@ -84,15 +86,21 @@ export const offerRequestResponseSchema = z.object({
   }),
 });
 
-/** Convierte ISO 8601 duration (e.g. "PT4H30M") a minutos. Retorna 0 si no parsea. */
+/**
+ * Convierte ISO 8601 duration (e.g. "PT4H30M", "PT1H2M3S") a minutos enteros.
+ * Soporta días, horas, minutos y segundos (segundos se redondean hacia abajo).
+ * Retorna 0 si la cadena es vacía/undefined o no comienza con "P" o tiene
+ * componentes no reconocidos (ancla en `$`).
+ */
 export function parseIso8601DurationToMinutes(iso: string | undefined): number {
   if (!iso) return 0;
-  const match = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/.exec(iso);
+  const match = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
   if (!match) return 0;
   const days = Number(match[1] ?? 0);
   const hours = Number(match[2] ?? 0);
   const minutes = Number(match[3] ?? 0);
-  return days * 24 * 60 + hours * 60 + minutes;
+  const seconds = Number(match[4] ?? 0);
+  return days * 24 * 60 + hours * 60 + minutes + Math.floor(seconds / 60);
 }
 
 /**
@@ -161,6 +169,7 @@ export function createDuffelClient(token: string): DuffelClient {
         currency: offer.total_currency,
         airline: offer.owner.name,
         segments,
+        // MVP one-way only. For multi-slice round-trips, compute stops per-slice and expose as a list.
         stops: Math.max(segments.length - 1, 0),
         durationMinutes,
       };

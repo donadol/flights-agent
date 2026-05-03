@@ -210,6 +210,11 @@ describe("parseIso8601DurationToMinutes", () => {
     ["", 0],
     [undefined, 0],
     ["invalid", 0],
+    ["PT1H2M30S", 62],          // seconds rounded down (30s → 0 min)
+    ["PT2H0M120S", 122],        // 120s = 2 min
+    ["PT1H30M5S", 90],          // 5s rounds to 0 min
+    ["PT1H2M3S4Z", 0],          // unknown trailing component → reject
+    ["1H30M", 0],               // missing leading P → reject
   ])("parsea %s → %i", (input, expected) => {
     expect(parseIso8601DurationToMinutes(input)).toBe(expected);
   });
