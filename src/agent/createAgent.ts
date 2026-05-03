@@ -1,5 +1,6 @@
 // src/agent/createAgent.ts
 import { createToolCallingAgent, AgentExecutor } from 'langchain/agents';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { createModel } from './model.js';
 import { createResolveAirportTool } from './tools/resolveAirport.js';
 import { createSearchFlightsTool } from './tools/searchFlights.js';
@@ -11,6 +12,8 @@ import { getEnv } from '../config/env.js';
 
 export interface BuildExecutorOptions {
   duffel?: DuffelClient;
+  /** Modelo inyectable para tests; default = ChatOpenAI vía OpenRouter. */
+  model?: BaseChatModel;
   verbose?: boolean;
 }
 
@@ -51,7 +54,7 @@ export async function buildAgentExecutor(
   );
 
   const agent = await createToolCallingAgent({
-    llm: createModel(),
+    llm: options.model ?? createModel(),
     tools,
     prompt: agentPrompt,
   });
