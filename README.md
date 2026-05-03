@@ -1,4 +1,4 @@
-# Flight Agent
+# Flights Agent
 
 Agente didáctico de búsqueda de vuelos en español, construido con LangChain y TypeScript. Conversa con el usuario, resuelve aeropuertos a códigos IATA y consulta ofertas reales en la API de Duffel.
 
@@ -28,7 +28,7 @@ OPENROUTER_MODEL=openai/gpt-4o-mini
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_TEMPERATURE=0
 OPENROUTER_HTTP_REFERER=https://your-app-domain.com
-OPENROUTER_APP_TITLE=Flight Agent
+OPENROUTER_APP_TITLE=Flights Agent
 
 # Duffel (solo test mode)
 DUFFEL_API_TOKEN=duffel_test_xxxxxxxxxxxxxx

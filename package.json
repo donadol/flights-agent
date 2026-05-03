@@ -1,5 +1,5 @@
 {
-  "name": "flight-agent",
+  "name": "flights-agent",
   "version": "0.1.0",
   "description": "Agente didáctico de búsqueda de vuelos en español (LangChain + Duffel test mode).",
   "private": true,

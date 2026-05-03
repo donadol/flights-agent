@@ -16,7 +16,7 @@ async function repl(): Promise<void> {
     terminal: process.stdout.isTTY,
   });
 
-  console.log('Flight Agent — REPL multi-turno. Salir: Ctrl+D o "salir".\n');
+  console.log('Flights Agent — REPL multi-turno. Salir: Ctrl+D o "salir".\n');
 
   let history: BaseMessage[] = [];
   process.stdout.write('> ');

@@ -1,4 +1,4 @@
-# Flight Agent Implementation Plan
+# Flights Agent Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -58,7 +58,7 @@ Archivos nuevos (todos a crear, el repo está vacío de código):
 
 ```json
 {
-  "name": "flight-agent",
+  "name": "flights-agent",
   "version": "0.1.0",
   "description": "Agente didáctico de búsqueda de vuelos en español (LangChain + Duffel test mode).",
   "private": true,
@@ -175,7 +175,7 @@ OPENROUTER_MODEL=openai/gpt-4o-mini
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_TEMPERATURE=0
 OPENROUTER_HTTP_REFERER=https://example.com
-OPENROUTER_APP_TITLE=Flight Agent
+OPENROUTER_APP_TITLE=Flights Agent
 
 # Duffel (test mode ONLY)
 DUFFEL_API_TOKEN=duffel_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -1372,7 +1372,7 @@ async function repl(): Promise<void> {
     terminal: process.stdout.isTTY,
   });
 
-  console.log('Flight Agent — REPL multi-turno. Salir: Ctrl+D o "salir".\n');
+  console.log('Flights Agent — REPL multi-turno. Salir: Ctrl+D o "salir".\n');
 
   let history: BaseMessage[] = [];
 
@@ -1710,7 +1710,7 @@ git commit -m "docs: sync README to implemented state and approve coverage-v8 in
 
 ## Execution Handoff
 
-**Plan complete and saved to `docs/superpowers/plans/2026-05-02-flight-agent.md`. Two execution options:**
+**Plan complete and saved to `docs/superpowers/plans/2026-05-02-flights-agent.md`. Two execution options:**
 
 **1. Subagent-Driven (recommended)** — Dispatch a fresh subagent per task with two-stage review (code review + brief alignment). Best for keeping context lean and getting iterative feedback.
 

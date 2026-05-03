@@ -1,4 +1,4 @@
-# Technical Brief — Flight Agent
+# Technical Brief — Flights Agent
 
 ## 1. Título de la tarea
 
