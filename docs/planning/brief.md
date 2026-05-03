@@ -169,7 +169,8 @@ El agente no debe:
 - **Type hints completos**: prohibido `any` salvo en los límites donde se valida con zod inmediatamente después.
 - **Validación con zod en los boundaries**: env vars y respuestas Duffel.
 - **Lint y estilo**: `eslint` con la config del repo de referencia; sin warnings.
-- **Sin dependencias adicionales** sin justificación. Aprobadas inicialmente: `@duffel/api`, `@langchain/core`, `@langchain/openai`, `langchain`, `dotenv`, `zod`. Dev: `eslint`, `typescript`, `tsx`, `vitest`, `@types/node`.
+- **Sin dependencias adicionales** sin justificación. Aprobadas inicialmente: `@duffel/api`, `@langchain/core`, `@langchain/openai`, `langchain`, `dotenv`, `zod`. Dev: `eslint`, `@eslint/js`, `typescript-eslint`, `typescript`, `tsx`, `vitest`, `@vitest/coverage-v8`, `@types/node`.
+- `@vitest/coverage-v8` requerido por el DoD (cobertura ≥ 90%). `@eslint/js` y `typescript-eslint` provistos por la config de ESLint.
 - **Failure modes cubiertos**:
   - Env inválido → fail-fast con mensaje claro.
   - Token Duffel inválido o inactivo → mensaje legible al usuario, sin stack trace crudo.

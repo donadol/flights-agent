@@ -2,7 +2,7 @@
 
 Agente didáctico de búsqueda de vuelos en español, construido con LangChain y TypeScript. Conversa con el usuario, resuelve aeropuertos a códigos IATA y consulta ofertas reales en la API de Duffel.
 
-> **Estado**: planning. El diseño está documentado en [`docs/planning/brief.md`](docs/planning/brief.md). El código aún no está implementado; la estructura, comandos y variables de entorno descritos aquí reflejan el diseño objetivo y se materializarán durante la implementación.
+El proyecto está implementado: CLI single-shot y REPL multi-turno, integración con Duffel test mode y OpenRouter, suite de 35 tests (unit + integración) y cobertura ≥ 90% en `src/services/` y `src/agent/tools/`. El diseño que guio la implementación vive en [`docs/planning/brief.md`](docs/planning/brief.md).
 
 ## Requirements
 
@@ -65,6 +65,7 @@ Salir del REPL: `Ctrl+D` o escribir `salir`.
 - `npm run start`: ejecuta el build compilado.
 - `npm run test`: corre los tests una vez.
 - `npm run test:watch`: tests en modo watch.
+- `npm run test:coverage`: tests con cobertura (≥90% en `src/services/` y `src/agent/tools/`).
 - `npm run lint`: corre ESLint.
 - `npm run typecheck`: valida tipos sin emitir build.
 
@@ -87,20 +88,21 @@ El detalle completo del diseño está en [`docs/planning/brief.md`](docs/plannin
 src/
 ├── index.ts                    # CLI: single-shot + REPL
 ├── config/
-│   └── env.ts                  # Env + validación zod
+│   └── env.ts                  # Env + validación zod (lazy dotenv)
 ├── services/
-│   └── duffel.ts               # Cliente Duffel + tipos normalizados
+│   └── duffel.ts               # Cliente Duffel + tipos normalizados + zod schemas
 └── agent/
     ├── model.ts                # ChatOpenAI vía OpenRouter
     ├── prompt.ts               # System prompt en español
     ├── tools/
-    │   ├── resolveAirport.ts   # ciudad → IATA
-    │   ├── searchFlights.ts    # IATA + fecha → ofertas
+    │   ├── resolveAirport.ts   # ciudad → IATA (factoría con DI)
+    │   ├── searchFlights.ts    # IATA + fecha → ofertas (factoría con DI)
     │   └── currentTime.ts      # hora actual / fechas relativas
-    ├── createAgent.ts          # Compone agente
-    └── runAgent.ts             # Ejecuta una vuelta
-tests/                          # Vitest: unit por capa + integración
-docs/planning/brief.md          # Diseño completo
+    ├── createAgent.ts          # Compone agente (DuffelClient inyectable)
+    └── runAgent.ts             # Ejecuta una vuelta multi-turno
+tests/                          # Vitest: mismo layout que src/ + integración
+tsconfig.json                   # Build (rootDir: src)
+tsconfig.test.json              # Typecheck que también cubre tests/
 ```
 
 ## Add a new tool
@@ -111,6 +113,13 @@ docs/planning/brief.md          # Diseño completo
 4. Regístrala en `src/agent/createAgent.ts`.
 5. Actualiza `src/agent/prompt.ts` para describir cuándo usarla.
 6. Añade tests unitarios mockeando el servicio.
+
+## Implementation notes
+
+- Hay dos `tsconfig`s: `tsconfig.json` para `npm run build` (solo producción, `rootDir: src`); `tsconfig.test.json` para `npm run typecheck` (cubre `src` + `tests`, `noEmit: true`).
+- `env.local` se carga relativo a `process.cwd()`. Ejecuta `npm run dev` desde la raíz del proyecto.
+- Las tools nunca llaman a `@duffel/api` directamente: consumen `DuffelClient` inyectado a través de `createAgent`.
+- El SDK `@duffel/api` 4.x marca el parámetro `query` de `suggestions.list` como deprecated en favor de `name`, pero el endpoint en vivo `/places/suggestions` aún requiere `query`. Pasamos `query` en consecuencia.
 
 ## Notes
 
