@@ -31,7 +31,8 @@ export interface FlightOffer {
   durationMinutes: number;
 }
 
-export type CabinClass = 'economy' | 'premium_economy' | 'business' | 'first';
+export const cabinClassSchema = z.enum(['economy', 'premium_economy', 'business', 'first']);
+export type CabinClass = z.infer<typeof cabinClassSchema>;
 
 export interface SearchOffersInput {
   origin: string;
