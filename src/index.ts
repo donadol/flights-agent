@@ -1,19 +1,8 @@
 // src/index.ts
 import readline from 'node:readline';
 import type { BaseMessage } from '@langchain/core/messages';
-import { ZodError } from 'zod';
 import { runAgent } from './agent/runAgent.js';
-
-function formatError(err: unknown): string {
-  if (err instanceof ZodError) {
-    const issues = err.issues
-      .map((i) => `  - ${i.path.join('.') || '(root)'}: ${i.message}`)
-      .join('\n');
-    return `Configuración inválida:\n${issues}`;
-  }
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
+import { translateAgentError } from './agent/errors.js';
 
 async function singleShot(input: string): Promise<void> {
   const { output } = await runAgent(input, [], { verbose: false });
@@ -45,7 +34,7 @@ async function repl(): Promise<void> {
       history = result.history;
       console.log(`\n${result.output}\n`);
     } catch (err) {
-      console.error(`\n[error] ${formatError(err)}\n`);
+      console.error(`\n[error] ${translateAgentError(err)}\n`);
     }
     process.stdout.write('> ');
   }
@@ -63,6 +52,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('Error fatal:', formatError(err));
+  console.error('Error fatal:', translateAgentError(err));
   process.exit(1);
 });
