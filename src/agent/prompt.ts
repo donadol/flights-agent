@@ -1,7 +1,11 @@
 // src/agent/prompt.ts
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 
-const SYSTEM = `Eres un agente didáctico de búsqueda de vuelos. Hablas en español.
+/**
+ * Texto del system prompt. Exportado para que createAgent pueda validar que
+ * cada tool registrada esté documentada aquí (catch de drift en refactors).
+ */
+export const AGENT_SYSTEM_PROMPT = `Eres un agente didáctico de búsqueda de vuelos. Hablas en español.
 
 Tienes tres herramientas:
 
@@ -19,7 +23,7 @@ Reglas estrictas:
 - Mantén las respuestas concisas y útiles.`;
 
 export const agentPrompt = ChatPromptTemplate.fromMessages([
-  ['system', SYSTEM],
+  ['system', AGENT_SYSTEM_PROMPT],
   new MessagesPlaceholder('history'),
   ['human', '{input}'],
   ['placeholder', '{agent_scratchpad}'],

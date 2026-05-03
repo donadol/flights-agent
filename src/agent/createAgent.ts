@@ -4,7 +4,7 @@ import { createModel } from './model.js';
 import { createResolveAirportTool } from './tools/resolveAirport.js';
 import { createSearchFlightsTool } from './tools/searchFlights.js';
 import { currentTimeTool } from './tools/currentTime.js';
-import { agentPrompt } from './prompt.js';
+import { agentPrompt, AGENT_SYSTEM_PROMPT } from './prompt.js';
 import type { DuffelClient } from '../services/duffel.js';
 import { createDuffelClient } from '../services/duffel.js';
 import { getEnv } from '../config/env.js';
@@ -12,6 +12,23 @@ import { getEnv } from '../config/env.js';
 export interface BuildExecutorOptions {
   duffel?: DuffelClient;
   verbose?: boolean;
+}
+
+/**
+ * Lanza si alguna tool registrada no está nombrada en el system prompt.
+ * Atrapa el drift más común: renombrar una tool y olvidar el prompt.
+ */
+export function assertToolsCoveredByPrompt(
+  toolNames: readonly string[],
+  systemPrompt: string,
+): void {
+  const missing = toolNames.filter((n) => !systemPrompt.includes(n));
+  if (missing.length > 0) {
+    throw new Error(
+      `Tools no documentadas en el system prompt: ${missing.join(', ')}. ` +
+        `Actualiza AGENT_SYSTEM_PROMPT en src/agent/prompt.ts.`,
+    );
+  }
 }
 
 /**
@@ -27,6 +44,11 @@ export async function buildAgentExecutor(
     createResolveAirportTool(duffel),
     createSearchFlightsTool(duffel),
   ];
+
+  assertToolsCoveredByPrompt(
+    tools.map((t) => t.name),
+    AGENT_SYSTEM_PROMPT,
+  );
 
   const agent = await createToolCallingAgent({
     llm: createModel(),
